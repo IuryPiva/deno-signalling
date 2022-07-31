@@ -1,35 +1,36 @@
 // import { serveTls } from "https://deno.land/std@0.140.0/http/server.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
-import { ParticipantStore } from "./src/participant.ts";
+import { MeetingStore } from "./src/meeting.ts";
 import {
   AnswerMessage,
   EnterMeetingMessage,
   IceCandidateMessage,
   OfferMessage,
-  SignalerMessage,
+  SignalerEventData,
   SignalerMessageHandlers,
 } from "./src/types.ts";
 
-const participantStore = new ParticipantStore();
+const meetingStore = new MeetingStore();
 
 function handler(req: Request) {
   return websocket(req);
 }
 
-const messageHandlers: (socket: WebSocket) => SignalerMessageHandlers = (
-  socket
-) => ({
+const messageHandlers: (
+  socket: WebSocket,
+  meetingId: string
+) => SignalerMessageHandlers = (socket, meetingId) => ({
   handleOffer: (msg: OfferMessage): void => {
-    participantStore.handleOffer(msg);
+    meetingStore.getOrCreate(meetingId).handleOffer(msg);
   },
   handleAnswer: (msg: AnswerMessage): void => {
-    participantStore.handleAnswer(msg);
+    meetingStore.getOrCreate(meetingId).handleAnswer(msg);
   },
   handleIceCandidate: (msg: IceCandidateMessage): void => {
-    participantStore.handleIceCandidate(msg);
+    meetingStore.getOrCreate(meetingId).handleIceCandidate(msg);
   },
   handleEnterMeeting: (msg: EnterMeetingMessage): void => {
-    participantStore.handleEnterMeeting(msg, socket);
+    meetingStore.getOrCreate(meetingId).handleEnterMeeting(msg, socket);
   },
   handleMsg: (msg: any): void => {
     console.log({ msg });
@@ -48,17 +49,16 @@ function websocket(req: Request): Response {
   socket.onopen = () => console.log("socket opened");
 
   socket.onmessage = (e) => {
-    const msg: SignalerMessage = JSON.parse(e.data);
-    const keys = Object.keys(msg) as (keyof typeof msg)[];
+    const { message, meetingId }: SignalerEventData = JSON.parse(e.data);
+    const keys = Object.keys(message) as (keyof typeof message)[];
 
     for (const key of keys) {
       const handlerKey = ("handle" +
         (key.charAt(0).toUpperCase() +
           key.slice(1))) as keyof SignalerMessageHandlers;
-      console.log({ handlerKey });
 
-      if (messageHandlers(socket)[handlerKey])
-        messageHandlers(socket)[handlerKey](msg[key] as any);
+      if (messageHandlers(socket, meetingId)[handlerKey])
+        messageHandlers(socket, meetingId)[handlerKey](message[key] as any);
     }
 
     console.log("socket message:", e.data.substring(0, 100));

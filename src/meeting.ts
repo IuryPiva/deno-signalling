@@ -12,7 +12,7 @@ export type Participant = {
   sessionDescription?: RTCSessionDescriptionInit;
 };
 
-export class ParticipantStore {
+export class Meeting {
   participants: Map<string, Participant> = new Map();
 
   private sendTo(target: string, message: SignalerMessage) {
@@ -54,5 +54,17 @@ export class ParticipantStore {
     }
 
     this.sendTo(enterMeeting.id, { msg: "Entered" });
+  }
+}
+
+export class MeetingStore {
+  meetings: Map<string, Meeting> = new Map();
+
+  getOrCreate(meetingId: string): Meeting {
+    const meeting = this.meetings.get(meetingId);
+    if (meeting) return meeting;
+    const newMeeting = new Meeting();
+    this.meetings.set(meetingId, newMeeting);
+    return newMeeting;
   }
 }

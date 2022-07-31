@@ -66,3 +66,8 @@ export type SignalerMessageHandlers = {
     string & Property
   >}`]-?: (msg: NonNullable<SignalerMessage[Property]>) => void;
 };
+
+export interface SignalerEventData {
+  meetingId: string;
+  message: SignalerMessage;
+}
