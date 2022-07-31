@@ -1,12 +1,7 @@
-export type Meeting = {
-  participants: string[];
-  date: Date;
-  title: string;
-  id: string;
-};
+import { WebRTCMeeting } from "./types.ts";
 
-export class MeetingStore {
-  meetings: Meeting[] = [];
+export class WebRTCMeetingStore {
+  meetings: WebRTCMeeting[] = [];
   usersPerMeeting: Map<string, Set<string>> = new Map();
 
   otherUsersOnMeeting(meetingId: string, userId: string) {
@@ -27,7 +22,7 @@ export class MeetingStore {
     this.meetings = JSON.parse(json);
   }
 
-  createMeeting(meeting: Meeting) {
+  createMeeting(meeting: WebRTCMeeting) {
     this.meetings.push(meeting);
     Deno.writeTextFile("./meetings.json", JSON.stringify(this.meetings));
   }
